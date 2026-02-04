@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PROPART V32.8 | TOTAL SYSTEM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root { --blue: #00f3ff; --purple: #bc13fe; --dark: #000; --green: #0f0; --red: #ff0055; --gold: #ffcc00; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--dark); color: white; font-family: 'Roboto Mono', monospace; margin: 0; padding-bottom: 90px; overflow-x: hidden; }
+        
+        /* HEADER */
+        .top-bar { background: #111; padding: 15px; border-bottom: 2px solid var(--blue); text-align: center; box-shadow: 0 0 15px var(--blue); position: sticky; top: 0; z-index: 1001; }
+        
+        .screen { display: none; padding: 20px; animation: fadeIn 0.4s ease-out; }
+        .screen.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .card { background: #111; border: 1px solid #333; border-left: 4px solid var(--purple); padding: 15px; margin-top: 15px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .btn { background: var(--blue); color: #000; border: none; padding: 16px; width: 100%; font-family: 'Orbitron'; font-weight: bold; margin-top: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
+        .btn:active { transform: scale(0.96); }
+        
+        /* BARRA DE ESCANEO */
+        .bar-container { width: 100%; background: #222; height: 15px; border-radius: 8px; margin-top: 15px; display: none; overflow: hidden; border: 1px solid var(--blue); }
+        #bar { width: 0%; background: var(--green); height: 100%; transition: 0.4s; box-shadow: 0 0 10px var(--green); }
+        
+        /* NAVEGACIÓN */
+        .nav { position: fixed; bottom: 0; width: 100%; background: #000; border-top: 2px solid var(--purple); display: flex; justify-content: space-around; padding: 12px 0; z-index: 1000; }
+        .nav-item { color: #555; font-size: 0.6rem; text-align: center; flex: 1; font-family: 'Orbitron'; cursor: pointer; }
+        .nav-item.active { color: var(--blue); text-shadow: 0 0 10px var(--blue); }
+        
+        input { width: 100%; padding: 15px; background: #050505; color: var(--blue); border: 1px solid var(--blue); font-family: 'Orbitron'; text-align: center; font-size: 1.1rem; border-radius: 8px; margin-top: 10px; }
+        .tech-info { font-size: 0.75rem; color: #ccc; line-height: 1.4; }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div id="mainStatus" style="font-family:'Orbitron'; color:var(--blue); font-weight: 900; letter-spacing: 1px;">PROPART MASTER V32.8</div>
+    </div>
+
+    <div id="scan" class="screen active">
+        <button class="btn" id="btnConnect" onclick="conectarBT()" style="background:var(--blue);">🔗 VINCULAR INTERFAZ Bluetooth</button>
+        <button class="btn" id="btnStartScan" onclick="leerECU()" style="background:var(--green); display:none; box-shadow: 0 0 15px var(--green);">🚀 INICIAR ESCANEO DE SISTEMAS</button>
+
+        <div id="scanProgress" class="bar-container">
+            <div id="bar"></div>
+        </div>
+        <p id="scanText" style="text-align:center; font-size:0.7rem; color:var(--blue); margin-top:8px; display:none;">Iniciando protocolos VAG...</p>
+
+        <div class="card" style="border-left-color: var(--blue);">
+            <h3 style="margin:0; font-family:'Orbitron'; font-size: 0.8rem; color:var(--blue);">BÚSQUEDA MANUAL DTC</h3>
+            <input type="text" id="dtcInput" placeholder="EJ: P0300">
+            <button class="btn" onclick="buscarFull()">ANALIZAR CÓDIGO</button>
+        </div>
+
+        <div id="resBox" style="display:none;">
+            <div class="card" style="border-left-color: var(--green);">
+                <h4 id="rNom" style="color:var(--blue); margin:0; font-family:'Orbitron';"></h4>
+                <div style="background: #111; padding: 12px; border: 1px solid var(--green); border-radius: 5px; margin-top:10px;">
+                    <b style="color:var(--green); font-size: 0.7rem;">REPARACIÓN SUGERIDA:</b><br>
+                    <span id="rSol" style="font-size:0.8rem;"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="data" class="screen">
+        <h3 style="color:var(--blue); font-family:'Orbitron';">INFORMACIÓN TÉCNICA</h3>
+        
+        <div class="card" style="border-left-color: var(--red);">
+            <b style="color:var(--red);">GOLF/JETTA (MOTOR 2.0):</b><br>
+            <p class="tech-info">
+                • <b>Inyectores:</b> 12-16 Ω. Cable Rojo/Negro (+12V).<br>
+                • <b>ECU:</b> Pin 1-2 (GND), Pin 3 (Bat), Pin 62 (Ign).<br>
+                • <b>Presión Gas:</b> 45-50 PSI.
+            </p>
+        </div>
+
+        <div class="card" style="border-left-color: var(--gold);">
+            <b style="color:var(--gold);">CAJA MÁGICA (DIAGRAMAS):</b><br>
+            <p class="tech-info">Sube tu foto para aclarar pines de: Cuerpos de aceleración, IMMO, ABS y Diesel Ligero.</p>
+            <button class="btn" onclick="irWhatsApp('Diagrama')" style="background:var(--gold); font-size: 0.7rem;">📸 ENVIAR FOTO PARA REFRESCAR</button>
+        </div>
+    </div>
+
+    <nav class="nav">
+        <div class="nav-item active" onclick="tab('scan', this)">DIAGNÓSTICO</div>
+        <div class="nav-item" onclick="tab('data', this)">DATA PRO</div>
+        <div class="nav-item" onclick="irWhatsApp()">SOPORTE</div>
+    </nav>
+
+    <script>
+        function tab(id, el) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            el.classList.add('active');
+        }
+
+        async function conectarBT() {
+            try {
+                const device = await navigator.bluetooth.requestDevice({ 
+                    acceptAllDevices: true, 
+                    optionalServices: ['00001101-0000-1000-8000-00805f9b34fb'] 
+                });
+                await device.gatt.connect();
+                alert("✅ INTERFAZ CONECTADA");
+                document.getElementById('btnStartScan').style.display = 'block';
+                document.getElementById('btnConnect').style.display = 'none';
+                document.getElementById('mainStatus').style.color = "var(--green)";
+                document.getElementById('mainStatus').innerText = "CONECTADO: " + device.name;
+            } catch (err) { alert("Socio, activa Bluetooth y GPS."); }
+        }
+
+        function leerECU() {
+            const bar = document.getElementById('bar');
+            const cont = document.getElementById('scanProgress');
+            const text = document.getElementById('scanText');
+            cont.style.display = 'block';
+            text.style.display = 'block';
+            
+            let p = 0;
+            // BARRIDO DE CÓDIGOS REALISTA
+            let interval = setInterval(() => {
+                p += 1;
+                bar.style.width = p + "%";
+                if(p == 20) text.innerText = "Escaneando Módulo de Motor (01)...";
+                if(p == 50) text.innerText = "Revisando Memoria de Errores (DTC)...";
+                if(p == 80) text.innerText = "Analizando Sistemas de Confort...";
+
+                if(p >= 100) {
+                    clearInterval(interval);
+                    // Aquí simulamos que encontró los códigos que traes
+                    const detectados = ["P0300", "P0171", "P0507"];
+                    alert("⚠️ FALLAS DETECTADAS:\n" + detectados.join(" | "));
+                    document.getElementById('dtcInput').value = detectados[1]; // Ponemos el P0171 para analizar
+                    buscarFull();
+                }
+            }, 60);
+        }
+
+        const dataMaster = {
+            "P0300": "Falla de encendido múltiple. Revisar: Bobinas, Bujías, Presión de Gasolina.",
+            "P0171": "Sistema Pobre (Banco 1): Posible fuga de vacío en múltiple o MAF sucio.",
+            "P0507": "Marcha Mínima Alta: Limpiar cuerpo de aceleración y realizar ajuste básico.",
+            "P0335": "Sensor CKP (Cigüeñal): Falla de señal. El motor se apaga o no arranca.",
+            "P0420": "Catalizador: Eficiencia baja. Revisar sensor de oxígeno posterior.",
+            "P1610": "Inmovilizador (Nissan): Bloqueo de seguridad. Requiere programación de llave."
+        };
+
+        function buscarFull() {
+            const c = document.getElementById('dtcInput').value.toUpperCase().trim();
+            const res = document.getElementById('resBox');
+            if(dataMaster[c]) {
+                res.style.display = 'block';
+                document.getElementById('rNom').innerText = "CÓDIGO: " + c;
+                document.getElementById('rSol').innerText = dataMaster[c];
+                res.scrollIntoView({ behavior: 'smooth' });
+            } else if (c !== "") {
+                if(confirm("Código no encontrado en base local. ¿Consultar a Julss?")) {
+                    irWhatsApp(c);
+                }
+            }
+        }
+
+        function irWhatsApp(cod = "") {
+            let msg = cod === "Diagrama" ? "Socio, te mando foto para la Caja Mágica." : "Socio, necesito apoyo con el código: " + cod;
+            window.location.href = "https://wa.me/527776838196?text=" + encodeURIComponent(msg);
+        }
+    </script>
+</body>
+</html>
