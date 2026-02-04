@@ -1,98 +1,91 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PROPART V36 | BLACK EDITION</title>
+    <title>PROPART V37 | GLOBAL MULTIMARCA</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Roboto+Mono&display=swap" rel="stylesheet">
     <style>
-        :root { --blue: #00f3ff; --purple: #bc13fe; --dark: #000; --green: #0f0; --red: #ff0055; --gold: #ffcc00; --orange: #ff6600; }
+        :root { --blue: #00f3ff; --purple: #bc13fe; --dark: #050505; --green: #0f0; --red: #ff0055; --gold: #ffcc00; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: var(--dark); color: white; font-family: 'Roboto Mono', monospace; margin: 0; padding-bottom: 90px; }
         
-        .top-bar { background: #0a0a0a; padding: 15px; border-bottom: 2px solid var(--purple); text-align: center; box-shadow: 0 0 20px var(--purple); position: sticky; top: 0; z-index: 1001; }
-        .screen { display: none; padding: 15px; animation: fadeIn 0.4s ease; }
+        .top-bar { background: #000; padding: 15px; border-bottom: 2px solid var(--blue); text-align: center; box-shadow: 0 0 20px var(--blue); position: sticky; top: 0; z-index: 1001; }
+        .screen { display: none; padding: 15px; animation: fadeIn 0.3s ease; }
         .screen.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .card { background: #111; border: 1px solid #222; border-left: 4px solid var(--blue); padding: 15px; margin-bottom: 15px; border-radius: 8px; position: relative; }
-        .btn { background: var(--blue); color: #000; border: none; padding: 15px; width: 100%; font-family: 'Orbitron'; font-weight: bold; margin-top: 10px; border-radius: 8px; cursor: pointer; font-size: 0.75rem; text-transform: uppercase; }
-        .btn-magic { background: linear-gradient(45deg, var(--purple), var(--blue)); color: white; box-shadow: 0 0 15px var(--purple); }
-        .btn-danger { background: var(--red); color: white; }
-
-        input { width: 100%; padding: 15px; background: #000; color: var(--blue); border: 1px solid var(--blue); font-family: 'Orbitron'; text-align: center; border-radius: 8px; font-size: 1.1rem; }
+        .card { background: #111; border: 1px solid #222; border-left: 4px solid var(--blue); padding: 15px; margin-bottom: 15px; border-radius: 8px; }
+        .btn { background: var(--blue); color: #000; border: none; padding: 15px; width: 100%; font-family: 'Orbitron'; font-weight: bold; margin-top: 10px; border-radius: 8px; cursor: pointer; font-size: 0.7rem; }
         
-        .nav { position: fixed; bottom: 0; width: 100%; background: #000; border-top: 2px solid var(--blue); display: flex; justify-content: space-around; padding: 12px 0; z-index: 1000; }
+        select, input { width: 100%; padding: 15px; background: #000; color: var(--blue); border: 1px solid #333; font-family: 'Orbitron'; border-radius: 8px; margin-top: 10px; font-size: 0.9rem; }
+        
+        .nav { position: fixed; bottom: 0; width: 100%; background: #000; border-top: 2px solid var(--purple); display: flex; justify-content: space-around; padding: 12px 0; z-index: 1000; }
         .nav-item { color: #444; font-size: 0.55rem; text-align: center; flex: 1; font-family: 'Orbitron'; }
-        .nav-item.active { color: var(--blue); text-shadow: 0 0 8px var(--blue); }
+        .nav-item.active { color: var(--blue); text-shadow: 0 0 10px var(--blue); }
 
-        .tag { font-size: 0.6rem; padding: 2px 6px; border-radius: 3px; font-weight: bold; margin-bottom: 5px; display: inline-block; text-transform: uppercase; }
-        .tag-magic { background: var(--gold); color: #000; }
-        
-        .graph-sim { width: 100%; height: 60px; background: #050505; border: 1px solid #111; margin-top: 10px; border-radius: 4px; overflow: hidden; }
+        .solucion-box { background: #002200; border: 1px solid var(--green); padding: 10px; border-radius: 5px; margin-top: 10px; display: none; color: #cfc; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
     <div class="top-bar">
-        <div style="font-family:'Orbitron'; color:var(--blue); font-size: 0.8rem; letter-spacing: 2px;">PROPART V36 MASTER PRO</div>
+        <div style="font-family:'Orbitron'; color:var(--blue); font-size: 0.8rem;">PROPART MULTIMARCA V37</div>
     </div>
 
     <div id="diag" class="screen active">
-        <button class="btn" onclick="conectarBT()" style="background:var(--green);">🔗 ENLAZAR ELM327 (OBD2)</button>
-        
         <div class="card">
-            <span class="tag" style="background:var(--blue); color:#000;">Motor & Transmisión</span>
-            <input type="text" id="dtcInput" placeholder="P0300">
-            <button class="btn" onclick="buscarFull()">ANALIZAR CÓDIGO</button>
-        </div>
-
-        <div class="card" style="border-left-color: var(--orange);">
-            <span class="tag" style="background:var(--orange); color:#000;">Calibración VAG</span>
-            <button class="btn" onclick="mandarComando('C60')">🚀 AJUSTE BÁSICO CUERPO (CANAL 060)</button>
-            <p style="font-size: 0.6rem; color: #888; margin-top: 5px;">* Switch ON / Motor OFF / Sin tocar pedal.</p>
+            <span style="color:var(--blue); font-size: 0.6rem;">1. SELECCIONA VEHÍCULO</span>
+            <select id="marcaSelect">
+                <option value="GENERIC">GENÉRICO / TODOS</option>
+                <option value="VAG">VW / AUDI / SEAT</option>
+                <option value="NISSAN">NISSAN / INFINITI</option>
+                <option value="FORD">FORD / LINCOLN</option>
+                <option value="GM">CHEVROLET / GMC / CADILLAC</option>
+                <option value="TOYOTA">TOYOTA / LEXUS</option>
+            </select>
+            <input type="number" id="yearInput" placeholder="AÑO (EJ: 2005)">
         </div>
 
         <div class="card" style="border-left-color: var(--purple);">
-            <span class="tag" style="background:var(--purple); color:#fff;">Seguridad IMMO</span>
-            <button class="btn btn-danger" onclick="mandarComando('BORRAR')">❌ BORRAR LLAVES PERDIDAS</button>
-            <button class="btn" style="background:var(--purple); color:white;" onclick="mandarComando('PROG')">🔑 CODIFICAR NUEVA LLAVE</button>
+            <span style="color:var(--purple); font-size: 0.6rem;">2. INGRESA CÓDIGO DTC</span>
+            <input type="text" id="dtcInput" placeholder="P0300">
+            <button class="btn" onclick="buscarDTC()">ANALIZAR FALLA</button>
+            
+            <div id="solucionCont" class="solucion-box">
+                <b id="solTitle" style="color:var(--green);"></b><br>
+                <span id="solText"></span>
+            </div>
         </div>
     </div>
 
     <div id="magic" class="screen">
-        <div style="text-align: center; margin-bottom: 20px;">
-            <h2 style="font-family:'Orbitron'; color:var(--gold); margin:0;">✨ CAJA MÁGICA ✨</h2>
-            <p style="font-size:0.7rem; color:var(--blue);">Inteligencia Artificial aplicada al Diagramado</p>
-        </div>
-
-        <div class="card" style="border-left-color: var(--gold); background: linear-gradient(to bottom, #111, #000);">
-            <div class="tag tag-magic">Diagrama Master</div>
-            <p style="font-size:0.8rem;">Sube fotos de diagramas de <b>TODAS LAS MARCAS</b>. La IA limpiará la imagen, traducirá y coloreará líneas de:</p>
-            <ul style="font-size:0.75rem; color:#ccc; padding-left: 20px;">
-                <li>Pinouts de ECUs (Alimentación y Tierras)</li>
-                <li>Diagramas de Inyectores y Bobinas</li>
-                <li>Líneas de comunicación CAN-BUS / K-Line</li>
-            </ul>
-            <button class="btn btn-magic" onclick="irWhatsApp('Diagrama')">📸 ENVIAR FOTO A LA CAJA MÁGICA</button>
-        </div>
-
-        <div class="card" style="border-left-color: var(--blue);">
-            <span class="tag" style="background:var(--blue); color:#000;">Pinout Finder</span>
-            <p style="font-size:0.75rem;">¿No encuentras un Pin? Escribe el modelo y año abajo y la IA te enviará la imagen del conector.</p>
-            <input type="text" id="modelInput" placeholder="EJ: SENTRA 2005 ECU">
-            <button class="btn" onclick="irWhatsApp('Pinout')">🔍 SOLICITAR PINOUT</button>
+        <div class="card" style="border-left-color: var(--gold);">
+            <h3 style="color:var(--gold); font-family:'Orbitron'; font-size:0.9rem;">✨ CAJA MÁGICA V37</h3>
+            <p style="font-size:0.75rem;">Para diagramas complejos o pinouts que no están en la base local:</p>
+            <button class="btn" style="background:var(--gold);" onclick="puente('DIAGRAMA')">📸 ENVIAR FOTO A REFRESCAR</button>
+            <button class="btn" style="background:var(--blue);" onclick="puente('PINOUT')">🔍 SOLICITAR PINOUT ESPECÍFICO</button>
         </div>
     </div>
 
     <nav class="nav">
         <div class="nav-item active" onclick="tab('diag', this)">ESCANER</div>
         <div class="nav-item" onclick="tab('magic', this)">CAJA MÁGICA</div>
-        <div class="nav-item" onclick="irWhatsApp('Soporte')">SOPORTE</div>
+        <div class="nav-item" onclick="puente('SOPORTE')">SOPORTE</div>
     </nav>
 
     <script>
-        let gattServer;
+        // BASE DE DATOS LOCAL (PARA QUE NO TE ESCRIBAN POR TODO)
+        const db = {
+            "P0300": "Falla de encendido múltiple. Revisar: Bobinas, Bujías, Fuga de vacío.",
+            "P0171": "Sistema Pobre (Lean). Revisar: MAF sucio, entrada de aire falsa, presión de gas.",
+            "P0507": "Marcha mínima alta. Limpiar Cuerpo de Aceleración y realizar ajuste básico.",
+            "P0420": "Catalizador deficiente. Revisar sensor O2 posterior y estado del panal.",
+            "P0335": "Sensor Cigüeñal (CKP). Revisar cableado y señal de 5V/12V.",
+            "P1610": "Bloqueo IMMO. Nissan: Switch ON 5s -> OFF 5s (Repetir 3 veces).",
+            "U0100": "Pérdida de comunicación con ECU. Revisar fusibles de motor y red CAN."
+        };
 
         function tab(id, el) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -101,35 +94,26 @@
             el.classList.add('active');
         }
 
-        async function conectarBT() {
-            try {
-                const device = await navigator.bluetooth.requestDevice({ 
-                    acceptAllDevices: true, 
-                    optionalServices: ['00001101-0000-1000-8000-00805f9b34fb'] 
-                });
-                gattServer = await device.gatt.connect();
-                alert("✅ SISTEMA CONECTADO: " + device.name);
-            } catch (e) { alert("Socio, activa Bluetooth y GPS."); }
-        }
-
-        async function mandarComando(tipo) {
-            if(!gattServer) { alert("❌ Escáner no vinculado."); return; }
-            alert("📡 Mandando comando real al vehículo... Espere respuesta del módulo.");
-            // Aquí va la lógica de escritura que ya tenemos
-        }
-
-        function buscarFull() {
-            const c = document.getElementById('dtcInput').value.toUpperCase();
-            if(c === "P0300") alert("P0300: Falla de encendido múltiple. Revisar bobinas.");
-            else irWhatsApp(c);
-        }
-
-        function irWhatsApp(tipo) {
-            let msg = "";
-            if(tipo === 'Diagrama') msg = "Socio, te mando esta foto para que la CAJA MÁGICA la refresque a color.";
-            else if(tipo === 'Pinout') msg = "Socio, necesito el Pinout de: " + document.getElementById('modelInput').value;
-            else msg = "Socio, apoyo con el código: " + tipo;
+        function buscarDTC() {
+            const dtc = document.getElementById('dtcInput').value.toUpperCase().trim();
+            const marca = document.getElementById('marcaSelect').value;
+            const res = document.getElementById('solucionCont');
             
+            if(db[dtc]) {
+                res.style.display = "block";
+                document.getElementById('solTitle').innerText = "CÓDIGO " + dtc + " (" + marca + ")";
+                document.getElementById('solText').innerText = db[dtc];
+            } else {
+                if(confirm("Código raro. ¿Solicitar solución a la Central de Datos Julss AI?")) {
+                    puente("DTC_DESCONOCIDO: " + dtc + " Marca: " + marca);
+                }
+            }
+        }
+
+        function puente(accion) {
+            const year = document.getElementById('yearInput').value || "N/A";
+            const marca = document.getElementById('marcaSelect').value;
+            let msg = `[PROPART_V37] Accion: ${accion} | Vehiculo: ${marca} | Año: ${year}`;
             window.location.href = "https://wa.me/527776838196?text=" + encodeURIComponent(msg);
         }
     </script>
