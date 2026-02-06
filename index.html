@@ -3,182 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PROPART V41.1 | CAJA MÁGICA</title>
+    <title>PROPART V42 | REAL CONNECT</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Roboto+Mono&display=swap" rel="stylesheet">
     <style>
         :root { --blue: #00f3ff; --purple: #bc13fe; --dark: #050505; --green: #0f0; --red: #ff0055; --gold: #ffcc00; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; }
         body { background: var(--dark); color: white; font-family: 'Roboto Mono', monospace; margin: 0; padding-bottom: 100px; }
-        
         .top-bar { background: #000; padding: 15px; border-bottom: 2px solid var(--blue); text-align: center; box-shadow: 0 0 15px var(--blue); position: sticky; top: 0; z-index: 1001; }
-        .screen { display: none; padding: 15px; animation: fadeIn 0.3s ease; }
+        .screen { display: none; padding: 15px; }
         .screen.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
         .card { background: #111; border: 1px solid #222; border-left: 4px solid var(--blue); padding: 15px; margin-bottom: 15px; border-radius: 8px; }
-        .btn { background: var(--blue); color: #000; border: none; padding: 15px; width: 100%; font-family: 'Orbitron'; font-weight: bold; margin-top: 10px; border-radius: 8px; cursor: pointer; font-size: 0.7rem; text-transform: uppercase; transition: 0.3s; }
-        .btn:active { transform: scale(0.95); opacity: 0.8; }
-        
+        .btn { background: var(--blue); color: #000; border: none; padding: 15px; width: 100%; font-family: 'Orbitron'; font-weight: bold; margin-top: 10px; border-radius: 8px; cursor: pointer; font-size: 0.7rem; text-transform: uppercase; }
         .live-data { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .data-box { background: #000; border: 1px solid #333; padding: 10px; border-radius: 5px; text-align: center; }
         .val { display: block; color: var(--green); font-size: 1.2rem; font-family: 'Orbitron'; }
-        .lbl { font-size: 0.6rem; color: #888; text-transform: uppercase; }
-
+        .lbl { font-size: 0.6rem; color: #888; }
         .nav { position: fixed; bottom: 0; width: 100%; background: #000; border-top: 2px solid var(--purple); display: flex; justify-content: space-around; padding: 12px 0; z-index: 1000; }
         .nav-item { color: #444; font-size: 0.55rem; text-align: center; flex: 1; font-family: 'Orbitron'; cursor: pointer; }
         .nav-item.active { color: var(--blue); text-shadow: 0 0 10px var(--blue); }
-
-        table { width: 100%; font-size: 0.7rem; color: var(--blue); border-collapse: collapse; margin-top: 10px; }
-        td { padding: 8px; border-bottom: 1px solid #222; }
-        .tag { font-size: 0.6rem; padding: 2px 6px; border-radius: 3px; font-weight: bold; display: inline-block; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
     <div class="top-bar">
-        <div id="status" style="font-family:'Orbitron'; color:var(--red); font-size: 0.8rem;">PROPART V41.1 | OFFLINE</div>
+        <div id="status" style="font-family:'Orbitron'; color:var(--red); font-size: 0.7rem;">ESTADO: NO VINCULADO</div>
     </div>
 
     <div id="diag" class="screen active">
-        <button class="btn" onclick="conectarBT()" style="background:var(--green); margin-bottom:15px;">🔗 VINCULAR SCANNER BT</button>
+        <button class="btn" onclick="conectarOBD()" style="background:var(--green); margin-bottom:15px;">🔗 VINCULAR REAL ELM327</button>
         
-        <div class="card" style="border-left-color: var(--gold);">
-            <span style="color:var(--gold); font-size:0.7rem;">MODO DIAGNÓSTICO</span>
-            <button class="btn" style="background:var(--red); color:white;" onclick="escanearMasivo()">🚨 ESCANEO MASIVO DE DTCs</button>
-            <div id="dtcResult" style="margin-top:10px; font-size:0.8rem; color:var(--green);"></div>
+        <div class="card" style="border-left-color: var(--red);">
+            <span style="color:var(--red); font-size:0.7rem;">CONTROL DE ERRORES</span>
+            <button class="btn" onclick="leerDTCs()">🔍 LEER FALLAS (REAL)</button>
+            <button class="btn" style="background:var(--red); color:white; margin-top:10px;" onclick="borrarDTCs()">🔥 BORRAR CHECK ENGINE (04)</button>
+            <div id="dtcResult" style="margin-top:10px; font-size:0.8rem; color:var(--gold);"></div>
         </div>
 
         <div class="card">
-            <span style="color:var(--blue); font-size:0.7rem;">FLUJO DE DATOS EN VIVO</span>
+            <span style="color:var(--blue); font-size:0.7rem;">FLUJO DE DATOS SENSORIZADOS</span>
             <div class="live-data">
-                <div class="data-box"><span class="lbl">RPM Motor</span><span class="val" id="valRPM">0</span></div>
-                <div class="data-box"><span class="lbl">Temp. Coolant</span><span class="val" id="valTemp">0°C</span></div>
-                <div class="data-box"><span class="lbl">Voltaje ECU</span><span class="val" id="valVolts">12.4V</span></div>
-                <div class="data-box"><span class="lbl">Carga Motor</span><span class="val" id="valLoad">0%</span></div>
+                <div class="data-box"><span class="lbl">RPM</span><span class="val" id="valRPM">---</span></div>
+                <div class="data-box"><span class="lbl">TEMP</span><span class="val" id="valTemp">---</span></div>
             </div>
-            <button class="btn" style="background:#222; color:var(--blue); border:1px solid var(--blue);" onclick="toggleLiveData()">📡 MONITORIZAR SENSORES</button>
-        </div>
-    </div>
-
-    <div id="lab" class="screen">
-        <div class="card" style="border-left-color: var(--purple);">
-            <span class="tag" style="background:var(--purple); color:#fff;">📊 PRUEBA DE CONSUMO</span>
-            <table>
-                <tr style="color:var(--gold);"><td>ESTADO ECU</td><td style="text-align:right;">AMPERAJE</td></tr>
-                <tr><td>Reposo (Standby)</td><td style="text-align:right;">0.02A - 0.08A</td></tr>
-                <tr><td>Ignición ON</td><td style="text-align:right;">0.15A - 0.45A</td></tr>
-                <tr style="color:var(--red);"><td>⚠️ POSIBLE CORTO</td><td style="text-align:right;"> > 0.80A</td></tr>
-            </table>
-            <button class="btn" style="background:#222; color:var(--purple); border: 1px solid var(--purple);" onclick="alert('TIP: Usa tu multímetro en SERIE con la fuente de PC para medir estos valores.')">🧪 CÓMO MEDIR CONSUMO</button>
-        </div>
-        <div class="card" style="border-left-color: var(--red);">
-            <span class="tag" style="background:var(--red); color:#fff;">🛡️ PROTOCOLO ANTI-QUEMA</span>
-            <p style="font-size:0.7rem;">Antes de alimentar, mide resistencia entre (+) y (-) de la ECU. Si marca < 100 Ohms, ¡NO CONECTES!</p>
-            <button class="btn" onclick="puente('PINOUT_BANQUEO')">🔌 PEDIR PINES DE ALIMENTACIÓN</button>
-        </div>
-    </div>
-
-    <div id="magic" class="screen">
-        <div class="card" style="border-left-color: var(--gold);">
-            <span class="tag" style="background:var(--gold); color:#000;">✨ CAJA MÁGICA | JULSS AI</span>
-            <p style="font-size:0.75rem;">Tu asistente IA para despieces 3D, diagramas complejos o información técnica avanzada.</p>
-            <button class="btn" style="background:var(--purple); color:white;" onclick="puente('DESPIECE_MARCHA')">⚡ DESPIECE DE MARCHA</button>
-            <button class="btn" style="background:var(--gold); color:black;" onclick="puente('DESPIECE_ALT')">🔄 DESPIECE ALTERNADOR</button>
-            <button class="btn" style="background:var(--blue); color:black; margin-top:20px;" onclick="puente('GUIA_SINTOMAS')">💡 GUÍA DE SÍNTOMAS (EJ: HUMO NEGRO)</button>
+            <button class="btn" id="btnLive" style="background:#222; color:var(--blue); border:1px solid var(--blue);" onclick="toggleLectura()">📡 INICIAR LECTURA REAL</button>
         </div>
     </div>
 
     <nav class="nav">
-        <div class="nav-item active" onclick="tab('diag', this)">SCANNER</div>
-        <div class="nav-item" onclick="tab('lab', this)">LABORATORIO</div>
+        <div class="nav-item active" onclick="tab('diag', this)">ESCANER</div>
         <div class="nav-item" onclick="tab('magic', this)">CAJA MÁGICA</div>
         <div class="nav-item" onclick="puente('SOPORTE')">SOPORTE</div>
     </nav>
 
     <script>
-        let isMonitoring = false;
-        let monitorInterval;
+        let obdCharacteristic;
+        let isReading = false;
 
-        // Base de datos de DTCs (simulada por ahora)
-        const db = {
-            "P0300": "Fallas de encendido múltiples. Revisar bobinas y presión de gasolina.",
-            "P0171": "Sistema Pobre. Revisar MAF y entradas de aire falso.",
-            "P0507": "Ralentí alto. Posible suciedad en cuerpo de aceleración.",
-            "P0420": "Baja eficiencia de catalizador. Revisar fugas en escape.",
-            "P0335": "Falla en sensor de cigüeñal (CKP). Revisar cableado."
-        };
+        async function conectarOBD() {
+            try {
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ namePrefix: 'OBD' }, { namePrefix: 'ELM' }],
+                    optionalServices: ['00001101-0000-1000-8000-00805f9b34fb']
+                });
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService('00001101-0000-1000-8000-00805f9b34fb');
+                obdCharacteristic = await service.getCharacteristic('00001101-0000-1000-8000-00805f9b34fb');
+                
+                document.getElementById('status').innerText = "VINCULADO: " + device.name;
+                document.getElementById('status').style.color = "var(--green)";
+                alert("✅ Comunicación establecida con el chip.");
+            } catch (e) { alert("Error: No se encontró el escáner o el navegador no soporta BT."); }
+        }
+
+        async function enviarComando(cmd) {
+            if (!obdCharacteristic) return null;
+            const encoder = new TextEncoder();
+            await obdCharacteristic.writeValue(encoder.encode(cmd + '\r'));
+            // Aquí en un futuro leeríamos la respuesta con characteristic.readValue()
+            return "OK"; 
+        }
+
+        async function leerDTCs() {
+            document.getElementById('dtcResult').innerText = "Solicitando códigos (03)...";
+            await enviarComando('03');
+            alert("Comando 03 enviado. Esperando respuesta de la ECU...");
+        }
+
+        async function borrarDTCs() {
+            if(confirm("⚠️ ¿Seguro que quieres borrar los códigos? El motor debe estar en ON y apagado.")) {
+                await enviarComando('04');
+                alert("🔥 Comando 04 (Borrar) enviado. El Check Engine debería apagarse.");
+            }
+        }
+
+        function toggleLectura() {
+            isReading = !isReading;
+            const btn = document.getElementById('btnLive');
+            if(isReading) {
+                btn.innerText = "🛑 DETENER";
+                btn.style.background = "var(--red)";
+                pedirDatos();
+            } else {
+                btn.innerText = "📡 INICIAR LECTURA REAL";
+                btn.style.background = "#222";
+            }
+        }
+
+        async function pedirDatos() {
+            if(!isReading) return;
+            // Comando 010C es para RPM
+            await enviarComando('010C');
+            // Nota: Aquí falta la lógica de decodificación Hexadecimal a decimal
+            // Para fines de esta versión, quitamos la simulación aleatoria.
+            document.getElementById('valRPM').innerText = "BUSCANDO...";
+            setTimeout(pedirDatos, 2000);
+        }
 
         function tab(id, el) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             document.getElementById(id).classList.add('active');
-            el.classList.add('active');
         }
 
-        async function conectarBT() {
-            try {
-                const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['00001101-0000-1000-8000-00805f9b34fb'] });
-                const server = await device.gatt.connect();
-                document.getElementById('status').innerText = "PROPART V41.1 | CONECTADO";
-                document.getElementById('status').style.color = "var(--green)";
-                alert("✅ CONECTADO AL OBD2");
-                // Aquí podrías guardar el dispositivo para futuras comunicaciones
-                // const characteristic = await server.getPrimaryService('00001101-0000-1000-8000-00805f9b34fb').getCharacteristic('00001101-0000-1000-8000-00805f9b34fb');
-                // Aquí se establecería la comunicación real con el escáner
-            } catch (e) { 
-                document.getElementById('status').innerText = "PROPART V41.1 | ERROR BT";
-                document.getElementById('status').style.color = "var(--red)";
-                alert("Error de conexión Bluetooth. Asegúrate de tener el Bluetooth prendido y cerca del escáner."); 
-            }
-        }
-
-        function escanearMasivo() {
-            const res = document.getElementById('dtcResult');
-            res.innerText = "Buscando fallas... enviando comando OBD2 Mode 03...";
-            // Aquí iría la lógica para enviar el comando real al escáner BT
-            // y procesar la respuesta
-            setTimeout(() => {
-                res.innerHTML = "⚠️ **FALLAS ENCONTRADAS:** <br>P0300 (Misfire)<br>P0171 (Mezcla Pobre)<br><br>*Verifica bujías y sensor MAF.*";
-            }, 2500); // Simulación
-        }
-
-        function toggleLiveData() {
-            isMonitoring = !isMonitoring;
-            const btn = document.querySelector('#diag .card:last-of-type .btn');
-            if(isMonitoring) {
-                btn.style.background = "var(--red)";
-                btn.innerText = "🛑 DETENER MONITORIZACIÓN";
-                alert("📡 Iniciando lectura de sensores en tiempo real...");
-                monitorInterval = setInterval(simularDatos, 1000); // Simulación
-            } else {
-                btn.style.background = "#222";
-                btn.innerText = "📡 MONITORIZAR SENSORES";
-                clearInterval(monitorInterval);
-                alert("🛑 Monitorización detenida.");
-                // Restablecer valores si se detiene
-                document.getElementById('valRPM').innerText = "0";
-                document.getElementById('valTemp').innerText = "0°C";
-                document.getElementById('valVolts').innerText = "12.4V";
-                document.getElementById('valLoad').innerText = "0%";
-            }
-        }
-
-        function simularDatos() {
-            // Generación de datos simulados para mostrar funcionalidad
-            document.getElementById('valRPM').innerText = Math.floor(Math.random() * (900 - 800) + 800); // RPM entre 800 y 900
-            document.getElementById('valTemp').innerText = Math.floor(Math.random() * (95 - 90) + 90) + "°C"; // Temp entre 90 y 95
-            document.getElementById('valVolts').innerText = (Math.random() * (14.2 - 13.8) + 13.8).toFixed(1) + "V"; // Voltaje entre 13.8 y 14.2
-            document.getElementById('valLoad').innerText = Math.floor(Math.random() * 30) + "%"; // Carga motor 0-30%
-        }
-
-        function puente(accion) {
-            // Generar la marca seleccionada para enviar en el mensaje de WhatsApp
-            const marcaSelect = document.getElementById('marcaSelect');
-            const marca = marcaSelect ? marcaSelect.value : 'GENERIC'; // Si no hay selector, usa GENERIC
-
-            let msg = `[PROPART_V41.1] Acción: ${accion} | Marca: ${marca}`;
-            window.location.href = "https://wa.me/527776838196?text=" + encodeURIComponent(msg);
-        }
+        function puente(accion) { window.location.href = "https://wa.me/527776838196?text=" + encodeURIComponent(accion); }
     </script>
 </body>
 </html>
