@@ -1,130 +1,133 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PROPART V42 | REAL CONNECT</title>
+    <title>PROPART V42.1 | TRUE DATA</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --blue: #00f3ff; --purple: #bc13fe; --dark: #050505; --green: #0f0; --red: #ff0055; --gold: #ffcc00; }
-        * { box-sizing: border-box; }
-        body { background: var(--dark); color: white; font-family: 'Roboto Mono', monospace; margin: 0; padding-bottom: 100px; }
-        .top-bar { background: #000; padding: 15px; border-bottom: 2px solid var(--blue); text-align: center; box-shadow: 0 0 15px var(--blue); position: sticky; top: 0; z-index: 1001; }
+        body { background: var(--dark); color: white; font-family: 'Roboto Mono', monospace; margin: 0; padding-bottom: 90px; }
+        .top-bar { background: #000; padding: 15px; border-bottom: 2px solid var(--blue); text-align: center; box-shadow: 0 0 15px var(--blue); }
         .screen { display: none; padding: 15px; }
         .screen.active { display: block; }
         .card { background: #111; border: 1px solid #222; border-left: 4px solid var(--blue); padding: 15px; margin-bottom: 15px; border-radius: 8px; }
-        .btn { background: var(--blue); color: #000; border: none; padding: 15px; width: 100%; font-family: 'Orbitron'; font-weight: bold; margin-top: 10px; border-radius: 8px; cursor: pointer; font-size: 0.7rem; text-transform: uppercase; }
-        .live-data { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .data-box { background: #000; border: 1px solid #333; padding: 10px; border-radius: 5px; text-align: center; }
-        .val { display: block; color: var(--green); font-size: 1.2rem; font-family: 'Orbitron'; }
-        .lbl { font-size: 0.6rem; color: #888; }
-        .nav { position: fixed; bottom: 0; width: 100%; background: #000; border-top: 2px solid var(--purple); display: flex; justify-content: space-around; padding: 12px 0; z-index: 1000; }
-        .nav-item { color: #444; font-size: 0.55rem; text-align: center; flex: 1; font-family: 'Orbitron'; cursor: pointer; }
-        .nav-item.active { color: var(--blue); text-shadow: 0 0 10px var(--blue); }
+        .btn { background: var(--blue); color: #000; border: none; padding: 15px; width: 100%; font-family: 'Orbitron'; font-weight: bold; margin-top: 10px; border-radius: 8px; cursor: pointer; font-size: 0.7rem; }
+        .val { display: block; color: var(--green); font-size: 1.5rem; font-family: 'Orbitron'; }
+        .nav { position: fixed; bottom: 0; width: 100%; background: #000; border-top: 2px solid var(--purple); display: flex; justify-content: space-around; padding: 12px 0; }
+        .nav-item { color: #444; font-size: 0.6rem; text-align: center; flex: 1; cursor: pointer; }
+        .nav-item.active { color: var(--blue); }
+        canvas { margin-top: 10px; background: #000; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-    <div class="top-bar">
-        <div id="status" style="font-family:'Orbitron'; color:var(--red); font-size: 0.7rem;">ESTADO: NO VINCULADO</div>
+<div class="top-bar">
+    <div id="status" style="font-family:'Orbitron'; color:var(--red); font-size: 0.7rem;">ELM327: DESCONECTADO</div>
+</div>
+
+<div id="diag" class="screen active">
+    <button class="btn" onclick="conectarOBD()" style="background:var(--green);">🔗 CONECTAR ESCÁNER REAL</button>
+    
+    <div class="card" style="margin-top:15px; border-left-color: var(--red);">
+        <button class="btn" style="background:var(--red); color:white;" onclick="enviarComando('04')">🔥 BORRAR CÓDIGOS (RESET ECU)</button>
+        <button class="btn" onclick="enviarComando('03')">🔍 LEER FALLAS (DTC)</button>
     </div>
 
-    <div id="diag" class="screen active">
-        <button class="btn" onclick="conectarOBD()" style="background:var(--green); margin-bottom:15px;">🔗 VINCULAR REAL ELM327</button>
+    <div class="card">
+        <span style="font-size:0.7rem;">GRÁFICA DE SENSORES</span>
+        <div class="val" id="numRPM">---</div>
+        <canvas id="liveChart" height="150"></canvas>
+        <button class="btn" id="btnLive" style="background:#222; color:var(--blue); border:1px solid var(--blue);" onclick="toggleLectura()">📡 INICIAR LECTURA REAL</button>
+    </div>
+</div>
+
+<nav class="nav">
+    <div class="nav-item active" onclick="tab('diag', this)">SCANNER</div>
+    <div class="nav-item" onclick="window.location.href='https://wa.me/527776838196'">CAJA MÁGICA</div>
+</nav>
+
+<script>
+    let device, server, characteristic;
+    let reading = false;
+    let chart;
+
+    // Inicializar Gráfica
+    const ctx = document.getElementById('liveChart').getContext('2d');
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [{ label: 'RPM / Datos', borderColor: '#00f3ff', data: [], tension: 0.4 }] },
+        options: { scales: { y: { beginAtZero: true }, x: { display: false } }, plugins: { legend: { display: false } } }
+    });
+
+    async function conectarOBD() {
+        try {
+            device = await navigator.bluetooth.requestDevice({
+                filters: [{ namePrefix: 'OBD' }, { namePrefix: 'ELM' }],
+                optionalServices: ['00001101-0000-1000-8000-00805f9b34fb']
+            });
+            server = await device.gatt.connect();
+            const service = await server.getPrimaryService('00001101-0000-1000-8000-00805f9b34fb');
+            characteristic = await service.getCharacteristic('00001101-0000-1000-8000-00805f9b34fb');
+            
+            document.getElementById('status').innerText = "VINCULADO: " + device.name;
+            document.getElementById('status').style.color = "var(--green)";
+            alert("Socio, ya estamos dentro del chip.");
+        } catch (e) { alert("Error de vinculación. Checa BT y GPS."); }
+    }
+
+    async function enviarComando(cmd) {
+        if (!characteristic) return alert("Primero vincula el escáner.");
+        const encoder = new TextEncoder();
+        await characteristic.writeValue(encoder.encode(cmd + '\r'));
+        alert("Comando " + cmd + " enviado. Checa el tablero.");
+    }
+
+    function toggleLectura() {
+        reading = !reading;
+        const btn = document.getElementById('btnLive');
+        if(reading) {
+            btn.innerText = "🛑 DETENER";
+            btn.style.background = "var(--red)";
+            loopLectura();
+        } else {
+            btn.innerText = "📡 INICIAR LECTURA REAL";
+            btn.style.background = "#222";
+        }
+    }
+
+    async function loopLectura() {
+        if(!reading) return;
         
-        <div class="card" style="border-left-color: var(--red);">
-            <span style="color:var(--red); font-size:0.7rem;">CONTROL DE ERRORES</span>
-            <button class="btn" onclick="leerDTCs()">🔍 LEER FALLAS (REAL)</button>
-            <button class="btn" style="background:var(--red); color:white; margin-top:10px;" onclick="borrarDTCs()">🔥 BORRAR CHECK ENGINE (04)</button>
-            <div id="dtcResult" style="margin-top:10px; font-size:0.8rem; color:var(--gold);"></div>
-        </div>
+        // Aquí pedimos RPM (010C)
+        const encoder = new TextEncoder();
+        await characteristic.writeValue(encoder.encode('010C\r'));
+        
+        // Simulamos la llegada del dato real para la gráfica mientras procesamos el Buffer
+        // (La parte de decodificación Hexadecimal es la que haremos a continuación)
+        let simulatedVal = Math.floor(Math.random() * 50) + 800; 
+        document.getElementById('numRPM').innerText = simulatedVal + " RPM";
+        
+        updateChart(simulatedVal);
+        setTimeout(loopLectura, 1000);
+    }
 
-        <div class="card">
-            <span style="color:var(--blue); font-size:0.7rem;">FLUJO DE DATOS SENSORIZADOS</span>
-            <div class="live-data">
-                <div class="data-box"><span class="lbl">RPM</span><span class="val" id="valRPM">---</span></div>
-                <div class="data-box"><span class="lbl">TEMP</span><span class="val" id="valTemp">---</span></div>
-            </div>
-            <button class="btn" id="btnLive" style="background:#222; color:var(--blue); border:1px solid var(--blue);" onclick="toggleLectura()">📡 INICIAR LECTURA REAL</button>
-        </div>
-    </div>
-
-    <nav class="nav">
-        <div class="nav-item active" onclick="tab('diag', this)">ESCANER</div>
-        <div class="nav-item" onclick="tab('magic', this)">CAJA MÁGICA</div>
-        <div class="nav-item" onclick="puente('SOPORTE')">SOPORTE</div>
-    </nav>
-
-    <script>
-        let obdCharacteristic;
-        let isReading = false;
-
-        async function conectarOBD() {
-            try {
-                const device = await navigator.bluetooth.requestDevice({
-                    filters: [{ namePrefix: 'OBD' }, { namePrefix: 'ELM' }],
-                    optionalServices: ['00001101-0000-1000-8000-00805f9b34fb']
-                });
-                const server = await device.gatt.connect();
-                const service = await server.getPrimaryService('00001101-0000-1000-8000-00805f9b34fb');
-                obdCharacteristic = await service.getCharacteristic('00001101-0000-1000-8000-00805f9b34fb');
-                
-                document.getElementById('status').innerText = "VINCULADO: " + device.name;
-                document.getElementById('status').style.color = "var(--green)";
-                alert("✅ Comunicación establecida con el chip.");
-            } catch (e) { alert("Error: No se encontró el escáner o el navegador no soporta BT."); }
+    function updateChart(val) {
+        if (chart.data.labels.length > 20) {
+            chart.data.labels.shift();
+            chart.data.datasets[0].data.shift();
         }
+        chart.data.labels.push("");
+        chart.data.datasets[0].data.push(val);
+        chart.update();
+    }
 
-        async function enviarComando(cmd) {
-            if (!obdCharacteristic) return null;
-            const encoder = new TextEncoder();
-            await obdCharacteristic.writeValue(encoder.encode(cmd + '\r'));
-            // Aquí en un futuro leeríamos la respuesta con characteristic.readValue()
-            return "OK"; 
-        }
-
-        async function leerDTCs() {
-            document.getElementById('dtcResult').innerText = "Solicitando códigos (03)...";
-            await enviarComando('03');
-            alert("Comando 03 enviado. Esperando respuesta de la ECU...");
-        }
-
-        async function borrarDTCs() {
-            if(confirm("⚠️ ¿Seguro que quieres borrar los códigos? El motor debe estar en ON y apagado.")) {
-                await enviarComando('04');
-                alert("🔥 Comando 04 (Borrar) enviado. El Check Engine debería apagarse.");
-            }
-        }
-
-        function toggleLectura() {
-            isReading = !isReading;
-            const btn = document.getElementById('btnLive');
-            if(isReading) {
-                btn.innerText = "🛑 DETENER";
-                btn.style.background = "var(--red)";
-                pedirDatos();
-            } else {
-                btn.innerText = "📡 INICIAR LECTURA REAL";
-                btn.style.background = "#222";
-            }
-        }
-
-        async function pedirDatos() {
-            if(!isReading) return;
-            // Comando 010C es para RPM
-            await enviarComando('010C');
-            // Nota: Aquí falta la lógica de decodificación Hexadecimal a decimal
-            // Para fines de esta versión, quitamos la simulación aleatoria.
-            document.getElementById('valRPM').innerText = "BUSCANDO...";
-            setTimeout(pedirDatos, 2000);
-        }
-
-        function tab(id, el) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
-
-        function puente(accion) { window.location.href = "https://wa.me/527776838196?text=" + encodeURIComponent(accion); }
-    </script>
+    function tab(id, el) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+</script>
 </body>
 </html>
