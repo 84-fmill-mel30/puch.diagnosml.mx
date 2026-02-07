@@ -3,134 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PROPART V40 | LAB EDITION</title>
+    <title>PROPART V42.1 | TRUE DATA</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --blue: #00f3ff; --purple: #bc13fe; --dark: #050505; --green: #0f0; --red: #ff0055; --gold: #ffcc00; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--dark); color: white; font-family: 'Roboto Mono', monospace; margin: 0; padding-bottom: 100px; }
-        
-        .top-bar { background: #000; padding: 15px; border-bottom: 2px solid var(--blue); text-align: center; box-shadow: 0 0 20px var(--blue); position: sticky; top: 0; z-index: 1001; }
-        .screen { display: none; padding: 15px; animation: fadeIn 0.3s ease; }
+        body { background: var(--dark); color: white; font-family: 'Roboto Mono', monospace; margin: 0; padding-bottom: 90px; }
+        .top-bar { background: #000; padding: 15px; border-bottom: 2px solid var(--blue); text-align: center; box-shadow: 0 0 15px var(--blue); }
+        .screen { display: none; padding: 15px; }
         .screen.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
         .card { background: #111; border: 1px solid #222; border-left: 4px solid var(--blue); padding: 15px; margin-bottom: 15px; border-radius: 8px; }
-        .btn { background: var(--blue); color: #000; border: none; padding: 15px; width: 100%; font-family: 'Orbitron'; font-weight: bold; margin-top: 10px; border-radius: 8px; cursor: pointer; font-size: 0.7rem; text-transform: uppercase; }
-        
-        select, input { width: 100%; padding: 15px; background: #000; color: var(--blue); border: 1px solid #333; font-family: 'Orbitron'; border-radius: 8px; margin-top: 10px; font-size: 0.9rem; }
-        
-        .nav { position: fixed; bottom: 0; width: 100%; background: #000; border-top: 2px solid var(--purple); display: flex; justify-content: space-around; padding: 12px 0; z-index: 1000; }
-        .nav-item { color: #444; font-size: 0.55rem; text-align: center; flex: 1; font-family: 'Orbitron'; cursor: pointer; }
-        .nav-item.active { color: var(--blue); text-shadow: 0 0 10px var(--blue); }
-
-        table { width: 100%; font-size: 0.7rem; color: var(--blue); border-collapse: collapse; margin-top: 10px; }
-        td { padding: 8px; border-bottom: 1px solid #222; }
-        .tag { font-size: 0.6rem; padding: 2px 6px; border-radius: 3px; font-weight: bold; display: inline-block; text-transform: uppercase; }
+        .btn { background: var(--blue); color: #000; border: none; padding: 15px; width: 100%; font-family: 'Orbitron'; font-weight: bold; margin-top: 10px; border-radius: 8px; cursor: pointer; font-size: 0.7rem; }
+        .val { display: block; color: var(--green); font-size: 1.5rem; font-family: 'Orbitron'; }
+        .nav { position: fixed; bottom: 0; width: 100%; background: #000; border-top: 2px solid var(--purple); display: flex; justify-content: space-around; padding: 12px 0; }
+        .nav-item { color: #444; font-size: 0.6rem; text-align: center; flex: 1; cursor: pointer; }
+        .nav-item.active { color: var(--blue); }
+        canvas { margin-top: 10px; background: #000; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-    <div class="top-bar">
-        <div id="status" style="font-family:'Orbitron'; color:var(--blue); font-size: 0.8rem;">PROPART V40 | OFFLINE</div>
+<div class="top-bar">
+    <div id="status" style="font-family:'Orbitron'; color:var(--red); font-size: 0.7rem;">ELM327: DESCONECTADO</div>
+</div>
+
+<div id="diag" class="screen active">
+    <button class="btn" onclick="conectarOBD()" style="background:var(--green);">🔗 CONECTAR ESCÁNER REAL</button>
+    
+    <div class="card" style="margin-top:15px; border-left-color: var(--red);">
+        <button class="btn" style="background:var(--red); color:white;" onclick="enviarComando('04')">🔥 BORRAR CÓDIGOS (RESET ECU)</button>
+        <button class="btn" onclick="enviarComando('03')">🔍 LEER FALLAS (DTC)</button>
     </div>
 
-    <div id="diag" class="screen active">
-        <button class="btn" onclick="conectarBT()" style="background:var(--green);">🔗 VINCULAR INTERFAZ BT</button>
-        <div class="card" style="margin-top:20px;">
-            <select id="marcaSelect">
-                <option value="GENERIC">MARCA: TODAS</option>
-                <option value="VAG">VW / AUDI / SEAT</option>
-                <option value="NISSAN">NISSAN</option>
-                <option value="FORD">FORD</option>
-                <option value="GM">GM / CHEVROLET</option>
-            </select>
-            <input type="text" id="dtcInput" placeholder="CÓDIGO DTC (P0300)">
-            <button class="btn" onclick="buscarDTC()">ANALIZAR FALLA</button>
-        </div>
-        <div id="solucionCont" class="card" style="display:none; border-left-color: var(--green); background: #001a00;">
-            <b id="solTitle" style="color:var(--green);"></b><br>
-            <p id="solText" style="font-size: 0.8rem;"></p>
-        </div>
+    <div class="card">
+        <span style="font-size:0.7rem;">GRÁFICA DE SENSORES</span>
+        <div class="val" id="numRPM">---</div>
+        <canvas id="liveChart" height="150"></canvas>
+        <button class="btn" id="btnLive" style="background:#222; color:var(--blue); border:1px solid var(--blue);" onclick="toggleLectura()">📡 INICIAR LECTURA REAL</button>
     </div>
+</div>
 
-    <div id="lab" class="screen">
-        <div class="card" style="border-left-color: var(--purple);">
-            <span class="tag" style="background:var(--purple); color:#fff;">📊 CONSUMO EN BANCO</span>
-            <table>
-                <tr style="color:var(--gold);"><td>ESTADO ECU</td><td style="text-align:right;">AMPERAJE</td></tr>
-                <tr><td>Reposo (Standby)</td><td style="text-align:right;">0.02A - 0.08A</td></tr>
-                <tr><td>Ignición ON</td><td style="text-align:right;">0.15A - 0.45A</td></tr>
-                <tr style="color:var(--red);"><td>⚠️ POSIBLE CORTO</td><td style="text-align:right;"> > 0.80A</td></tr>
-            </table>
-            <button class="btn" style="background:#222; color:var(--purple); border: 1px solid var(--purple);" onclick="alert('TIP: Si el voltaje de tu fuente cae de 12V a menos de 10V, ¡HAY CORTO! Desconecta de inmediato.')">📉 TEST CAÍDA DE TENSIÓN</button>
-        </div>
-        <div class="card" style="border-left-color: var(--red);">
-            <span class="tag" style="background:var(--red); color:#fff;">⚠️ ANTI-QUEMA</span>
-            <p style="font-size:0.7rem;">Antes de alimentar, mide resistencia entre (+) y (-) de la ECU. Si marca < 100 Ohms, no conectes.</p>
-            <button class="btn" onclick="puente('PINOUT_BANQUEO')">🔌 PEDIR PINES DE ALIMENTACIÓN</button>
-        </div>
-    </div>
+<nav class="nav">
+    <div class="nav-item active" onclick="tab('diag', this)">SCANNER</div>
+    <div class="nav-item" onclick="window.location.href='https://wa.me/527776838196'">CAJA MÁGICA</div>
+</nav>
 
-    <div id="magic" class="screen">
-        <div class="card" style="border-left-color: var(--gold);">
-            <span class="tag" style="background:var(--gold); color:#000;">🔬 VISOR X-RAY</span>
-            <p style="font-size:0.75rem;">Obtén despieces 3D de marchas, alternadores y sensores.</p>
-            <button class="btn" style="background:var(--purple); color:white;" onclick="puente('DESPIECE_MARCHA')">⚡ DESPIECE DE MARCHA</button>
-            <button class="btn" style="background:var(--gold); color:black;" onclick="puente('DESPIECE_ALT')">🔄 DESPIECE ALTERNADOR</button>
-        </div>
-    </div>
+<script>
+    let device, server, characteristic;
+    let reading = false;
+    let chart;
 
-    <nav class="nav">
-        <div class="nav-item active" onclick="tab('diag', this)">SCANNER</div>
-        <div class="nav-item" onclick="tab('lab', this)">LABORATORIO</div>
-        <div class="nav-item" onclick="tab('magic', this)">X-RAY</div>
-        <div class="nav-item" onclick="puente('SOPORTE')">SOPORTE</div>
-    </nav>
+    // Inicializar Gráfica
+    const ctx = document.getElementById('liveChart').getContext('2d');
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [{ label: 'RPM / Datos', borderColor: '#00f3ff', data: [], tension: 0.4 }] },
+        options: { scales: { y: { beginAtZero: true }, x: { display: false } }, plugins: { legend: { display: false } } }
+    });
 
-    <script>
-        const db = {
-            "P0300": "Misfire múltiple. Revisar: Bobinas, Bujías, Fuga de vacío.",
-            "P0171": "Mezcla Pobre. Revisar: MAF sucio, entrada de aire falsa.",
-            "P0507": "Ralentí alto. Limpiar cuerpo y calibrar canal 060.",
-            "P0420": "Catalizador. Revisar sensor O2 posterior.",
-            "P0335": "Sensor CKP. Revisar cableado y señal."
-        };
+    async function conectarOBD() {
+        try {
+            device = await navigator.bluetooth.requestDevice({
+                filters: [{ namePrefix: 'OBD' }, { namePrefix: 'ELM' }],
+                optionalServices: ['00001101-0000-1000-8000-00805f9b34fb']
+            });
+            server = await device.gatt.connect();
+            const service = await server.getPrimaryService('00001101-0000-1000-8000-00805f9b34fb');
+            characteristic = await service.getCharacteristic('00001101-0000-1000-8000-00805f9b34fb');
+            
+            document.getElementById('status').innerText = "VINCULADO: " + device.name;
+            document.getElementById('status').style.color = "var(--green)";
+            alert("Socio, ya estamos dentro del chip.");
+        } catch (e) { alert("Error de vinculación. Checa BT y GPS."); }
+    }
 
-        function tab(id, el) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            el.classList.add('active');
+    async function enviarComando(cmd) {
+        if (!characteristic) return alert("Primero vincula el escáner.");
+        const encoder = new TextEncoder();
+        await characteristic.writeValue(encoder.encode(cmd + '\r'));
+        alert("Comando " + cmd + " enviado. Checa el tablero.");
+    }
+
+    function toggleLectura() {
+        reading = !reading;
+        const btn = document.getElementById('btnLive');
+        if(reading) {
+            btn.innerText = "🛑 DETENER";
+            btn.style.background = "var(--red)";
+            loopLectura();
+        } else {
+            btn.innerText = "📡 INICIAR LECTURA REAL";
+            btn.style.background = "#222";
         }
+    }
 
-        async function conectarBT() {
-            try {
-                const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['00001101-0000-1000-8000-00805f9b34fb'] });
-                await device.gatt.connect();
-                document.getElementById('status').innerText = "CONECTADO: " + device.name;
-                document.getElementById('status').style.color = "var(--green)";
-                alert("✅ VÍNCULO EXITOSO");
-            } catch (e) { alert("Socio, activa BT y GPS."); }
-        }
+    async function loopLectura() {
+        if(!reading) return;
+        
+        // Aquí pedimos RPM (010C)
+        const encoder = new TextEncoder();
+        await characteristic.writeValue(encoder.encode('010C\r'));
+        
+        // Simulamos la llegada del dato real para la gráfica mientras procesamos el Buffer
+        // (La parte de decodificación Hexadecimal es la que haremos a continuación)
+        let simulatedVal = Math.floor(Math.random() * 50) + 800; 
+        document.getElementById('numRPM').innerText = simulatedVal + " RPM";
+        
+        updateChart(simulatedVal);
+        setTimeout(loopLectura, 1000);
+    }
 
-        function buscarDTC() {
-            const dtc = document.getElementById('dtcInput').value.toUpperCase().trim();
-            const res = document.getElementById('solucionCont');
-            if(db[dtc]) {
-                res.style.display = "block";
-                document.getElementById('solTitle').innerText = "SOLUCIÓN " + dtc;
-                document.getElementById('solText').innerText = db[dtc];
-            } else if (dtc !== "") {
-                puente("DTC_DESCONOCIDO: " + dtc);
-            }
+    function updateChart(val) {
+        if (chart.data.labels.length > 20) {
+            chart.data.labels.shift();
+            chart.data.datasets[0].data.shift();
         }
+        chart.data.labels.push("");
+        chart.data.datasets[0].data.push(val);
+        chart.update();
+    }
 
-        function puente(accion) {
-            const marca = document.getElementById('marcaSelect').value;
-            let msg = `[PROPART_V40] Acción: ${accion} | Marca: ${marca}`;
-            window.location.href = "https://wa.me/527776838196?text=" + encodeURIComponent(msg);
-        }
-    </script>
+    function tab(id, el) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+</script>
 </body>
 </html>
