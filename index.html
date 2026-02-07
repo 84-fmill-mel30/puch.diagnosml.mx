@@ -4,129 +4,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PROPART V42.1 | TRUE DATA</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Roboto+Mono&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>PROPART V42.2 | UNLOCK CONNECT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto+Mono&display=swap" rel="stylesheet">
     <style>
-        :root { --blue: #00f3ff; --purple: #bc13fe; --dark: #050505; --green: #0f0; --red: #ff0055; --gold: #ffcc00; }
-        body { background: var(--dark); color: white; font-family: 'Roboto Mono', monospace; margin: 0; padding-bottom: 90px; }
-        .top-bar { background: #000; padding: 15px; border-bottom: 2px solid var(--blue); text-align: center; box-shadow: 0 0 15px var(--blue); }
-        .screen { display: none; padding: 15px; }
-        .screen.active { display: block; }
-        .card { background: #111; border: 1px solid #222; border-left: 4px solid var(--blue); padding: 15px; margin-bottom: 15px; border-radius: 8px; }
-        .btn { background: var(--blue); color: #000; border: none; padding: 15px; width: 100%; font-family: 'Orbitron'; font-weight: bold; margin-top: 10px; border-radius: 8px; cursor: pointer; font-size: 0.7rem; }
-        .val { display: block; color: var(--green); font-size: 1.5rem; font-family: 'Orbitron'; }
-        .nav { position: fixed; bottom: 0; width: 100%; background: #000; border-top: 2px solid var(--purple); display: flex; justify-content: space-around; padding: 12px 0; }
-        .nav-item { color: #444; font-size: 0.6rem; text-align: center; flex: 1; cursor: pointer; }
-        .nav-item.active { color: var(--blue); }
-        canvas { margin-top: 10px; background: #000; border-radius: 5px; }
+        :root { --blue: #00f3ff; --purple: #bc13fe; --dark: #050505; --green: #0f0; --red: #ff0055; }
+        body { background: var(--dark); color: white; font-family: 'Roboto Mono', monospace; margin: 0; text-align: center; }
+        .top-bar { background: #000; padding: 20px; border-bottom: 2px solid var(--blue); box-shadow: 0 0 15px var(--blue); }
+        .card { background: #111; border: 1px solid #333; padding: 20px; margin: 20px; border-radius: 12px; border-left: 5px solid var(--blue); }
+        .btn { background: var(--blue); color: #000; border: none; padding: 18px; width: 100%; font-family: 'Orbitron'; font-weight: bold; border-radius: 8px; cursor: pointer; font-size: 0.8rem; margin-top: 15px; }
+        .status-box { font-size: 0.7rem; margin-bottom: 10px; padding: 5px; border-radius: 5px; }
     </style>
 </head>
 <body>
 
 <div class="top-bar">
-    <div id="status" style="font-family:'Orbitron'; color:var(--red); font-size: 0.7rem;">ELM327: DESCONECTADO</div>
+    <div style="font-family:'Orbitron'; color:var(--blue);">PROPART V42.2</div>
 </div>
 
-<div id="diag" class="screen active">
-    <button class="btn" onclick="conectarOBD()" style="background:var(--green);">🔗 CONECTAR ESCÁNER REAL</button>
+<div class="card">
+    <div id="status" class="status-box" style="background:#200; color:var(--red);">ESTADO: DESCONECTADO</div>
     
-    <div class="card" style="margin-top:15px; border-left-color: var(--red);">
-        <button class="btn" style="background:var(--red); color:white;" onclick="enviarComando('04')">🔥 BORRAR CÓDIGOS (RESET ECU)</button>
-        <button class="btn" onclick="enviarComando('03')">🔍 LEER FALLAS (DTC)</button>
-    </div>
-
-    <div class="card">
-        <span style="font-size:0.7rem;">GRÁFICA DE SENSORES</span>
-        <div class="val" id="numRPM">---</div>
-        <canvas id="liveChart" height="150"></canvas>
-        <button class="btn" id="btnLive" style="background:#222; color:var(--blue); border:1px solid var(--blue);" onclick="toggleLectura()">📡 INICIAR LECTURA REAL</button>
+    <button class="btn" onclick="vincularUniversal()" style="background:var(--green);">1. BUSCAR CUALQUIER OBD2</button>
+    
+    <div id="controles" style="display:none; margin-top:20px;">
+        <button class="btn" onclick="enviarComando('010C')">📊 PEDIR RPM (01 0C)</button>
+        <button class="btn" onclick="enviarComando('04')" style="background:var(--red); color:white;">🔥 BORRAR FALLAS (04)</button>
+        <p style="font-size:0.6rem; color:#888; margin-top:10px;">Comandos enviados por canal RFCOMM</p>
     </div>
 </div>
 
-<nav class="nav">
-    <div class="nav-item active" onclick="tab('diag', this)">SCANNER</div>
-    <div class="nav-item" onclick="window.location.href='https://wa.me/527776838196'">CAJA MÁGICA</div>
-</nav>
+<div class="card" style="border-left-color: var(--purple);">
+    <button class="btn" style="background:var(--purple); color:white;" onclick="window.location.href='https://wa.me/527776838196'">💬 AYUDA DIRECTA (JULSS)</button>
+</div>
 
 <script>
-    let device, server, characteristic;
-    let reading = false;
-    let chart;
+    let gattServer;
+    let bluetoothCharacteristic;
 
-    // Inicializar Gráfica
-    const ctx = document.getElementById('liveChart').getContext('2d');
-    chart = new Chart(ctx, {
-        type: 'line',
-        data: { labels: [], datasets: [{ label: 'RPM / Datos', borderColor: '#00f3ff', data: [], tension: 0.4 }] },
-        options: { scales: { y: { beginAtZero: true }, x: { display: false } }, plugins: { legend: { display: false } } }
-    });
-
-    async function conectarOBD() {
+    async function vincularUniversal() {
+        const status = document.getElementById('status');
         try {
-            device = await navigator.bluetooth.requestDevice({
-                filters: [{ namePrefix: 'OBD' }, { namePrefix: 'ELM' }],
-                optionalServices: ['00001101-0000-1000-8000-00805f9b34fb']
+            status.innerText = "BUSCANDO DISPOSITIVOS...";
+            status.style.background = "#220";
+            status.style.color = "yellow";
+
+            // Filtro agresivo: Acepta todo lo que diga OBD, ELM o que no tenga nombre
+            const device = await navigator.bluetooth.requestDevice({
+                acceptAllDevices: true,
+                optionalServices: ['00001101-0000-1000-8000-00805f9b34fb'] // UUID estándar Serial Port
             });
-            server = await device.gatt.connect();
-            const service = await server.getPrimaryService('00001101-0000-1000-8000-00805f9b34fb');
-            characteristic = await service.getCharacteristic('00001101-0000-1000-8000-00805f9b34fb');
+
+            status.innerText = "CONECTANDO A: " + device.name;
             
-            document.getElementById('status').innerText = "VINCULADO: " + device.name;
-            document.getElementById('status').style.color = "var(--green)";
-            alert("Socio, ya estamos dentro del chip.");
-        } catch (e) { alert("Error de vinculación. Checa BT y GPS."); }
+            gattServer = await device.gatt.connect();
+            const service = await gattServer.getPrimaryService('00001101-0000-1000-8000-00805f9b34fb');
+            bluetoothCharacteristic = await service.getCharacteristic('00001101-0000-1000-8000-00805f9b34fb');
+
+            status.innerText = "✅ CONECTADO EXITOSAMENTE";
+            status.style.background = "#020";
+            status.style.color = "var(--green)";
+            document.getElementById('controles').style.display = "block";
+
+        } catch (error) {
+            console.log(error);
+            status.innerText = "❌ ERROR: " + error.message;
+            status.style.background = "#200";
+            status.style.color = "var(--red)";
+            alert("Socio, activa GPS y Bluetooth. Si usas iPhone, ¡esto solo jala en la app Bluefy!");
+        }
     }
 
     async function enviarComando(cmd) {
-        if (!characteristic) return alert("Primero vincula el escáner.");
-        const encoder = new TextEncoder();
-        await characteristic.writeValue(encoder.encode(cmd + '\r'));
-        alert("Comando " + cmd + " enviado. Checa el tablero.");
-    }
-
-    function toggleLectura() {
-        reading = !reading;
-        const btn = document.getElementById('btnLive');
-        if(reading) {
-            btn.innerText = "🛑 DETENER";
-            btn.style.background = "var(--red)";
-            loopLectura();
-        } else {
-            btn.innerText = "📡 INICIAR LECTURA REAL";
-            btn.style.background = "#222";
+        if (!bluetoothCharacteristic) return alert("¡VINCULA PRIMERO!");
+        try {
+            const encoder = new TextEncoder();
+            await bluetoothCharacteristic.writeValue(encoder.encode(cmd + '\r'));
+            alert("Comando " + cmd + " enviado. Mira el escáner, debe parpadear.");
+        } catch (e) {
+            alert("Error al enviar: " + e.message);
         }
-    }
-
-    async function loopLectura() {
-        if(!reading) return;
-        
-        // Aquí pedimos RPM (010C)
-        const encoder = new TextEncoder();
-        await characteristic.writeValue(encoder.encode('010C\r'));
-        
-        // Simulamos la llegada del dato real para la gráfica mientras procesamos el Buffer
-        // (La parte de decodificación Hexadecimal es la que haremos a continuación)
-        let simulatedVal = Math.floor(Math.random() * 50) + 800; 
-        document.getElementById('numRPM').innerText = simulatedVal + " RPM";
-        
-        updateChart(simulatedVal);
-        setTimeout(loopLectura, 1000);
-    }
-
-    function updateChart(val) {
-        if (chart.data.labels.length > 20) {
-            chart.data.labels.shift();
-            chart.data.datasets[0].data.shift();
-        }
-        chart.data.labels.push("");
-        chart.data.datasets[0].data.push(val);
-        chart.update();
-    }
-
-    function tab(id, el) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
     }
 </script>
 </body>
